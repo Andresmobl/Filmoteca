@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +37,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 
@@ -181,7 +186,10 @@ fun FilmListScreen(navController: NavHostController) {
 }
 
 @Composable
-fun FilmDataScreen(navController: NavHostController, movieName: String?) {
+fun FilmDataScreen(navController: NavHostController, movieName: String) {
+    var edited by remember { mutableStateOf(false) }// Estado para verificar si se editó
+
+    // UI principal
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -191,16 +199,13 @@ fun FilmDataScreen(navController: NavHostController, movieName: String?) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            navController.navigate("filmData/Pelicula relacionada") // Navegar a FilmDataScreen con la película relacionada
-        }) {
-            Text(text = "Ver película relacionada")
-        }
+        Text(text = if (edited) "¡Película editada!" else "No se han realizado cambios.", style = TextStyle(fontSize = 18.sp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            navController.navigate("filmEditScreen") // Navegar a FilmEditScreen
+            // Navegamos a FilmEditScreen y esperamos un resultado
+            navController.navigate("filmEditScreen/$movieName")
         }) {
             Text(text = "Editar película")
         }
@@ -208,28 +213,60 @@ fun FilmDataScreen(navController: NavHostController, movieName: String?) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            navController.popBackStack() // Volver a la pantalla anterior
+            navController.popBackStack()  // Volver a la pantalla anterior
         }) {
             Text(text = "Volver a la principal")
         }
     }
+
+    // Manejo del resultado al volver a esta pantalla
+    val backStackEntry = navController.currentBackStackEntryAsState().value
+    val result = backStackEntry?.savedStateHandle?.get<Boolean>("edited")
+    result?.let {
+        edited = it  // Actualizamos el estado según el resultado
+    }
 }
 
 @Composable
-fun FilmEditScreen(navController: NavController) {
+fun FilmEditScreen(navController: NavHostController, movieName: String) {
+    val context = LocalContext.current
+    var changesMade by remember { mutableStateOf(false) }  // Para simular cambios
+
+    // UI principal
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Editando película")
+        Text(text = "Editando película: $movieName", style = TextStyle(fontSize = 24.sp))
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.popBackStack() }) {
-            Text("Guardar")
+
+        // Simulamos que se hacen cambios
+        Button(onClick = {
+            changesMade = true  // Simula que se hizo un cambio
+        }) {
+            Text(text = "Hacer cambios")
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { navController.popBackStack() }) {
-            Text("Cancelar")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            // Si se hizo un cambio, devolvemos el resultado de éxito
+            navController.previousBackStackEntry?.savedStateHandle?.set("edited", true)
+            navController.popBackStack()  // Regresamos a la pantalla anterior
+        }) {
+            Text(text = "Guardar")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            // Si no se hicieron cambios, devolvemos el resultado de cancelación
+            navController.previousBackStackEntry?.savedStateHandle?.set("edited", false)
+            navController.popBackStack()  // Regresamos a la pantalla anterior
+        }) {
+            Text(text = "Cancelar")
         }
     }
 }
@@ -242,10 +279,11 @@ fun NavigationGraph(navController: NavHostController) {
         }
         composable("filmData/{movieName}") { backStackEntry ->
             val movieName = backStackEntry.arguments?.getString("movieName")
-            FilmDataScreen(navController = navController, movieName = movieName)
+            FilmDataScreen(navController = navController, movieName = movieName ?: "Desconocida")
         }
-        composable("filmEditScreen") {
-            FilmEditScreen(navController = navController)
+        composable("filmEditScreen/{movieName}") { backStackEntry ->
+            val movieName = backStackEntry.arguments?.getString("movieName")
+            FilmEditScreen(navController = navController, movieName = movieName ?: "Desconocida")
         }
         composable("aboutScreen") {
             AboutScreen()
