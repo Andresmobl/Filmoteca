@@ -1,5 +1,6 @@
 package com.campusdigitalfp.filmoteca
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -18,8 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,8 +90,10 @@ fun mandarEmail(context: Context, email: String, asunto: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AboutScreen() {
+fun AboutScreen(navController: NavHostController) {
     val context = LocalContext.current
 
     // Resolvemos los textos fuera de showToast
@@ -94,181 +105,244 @@ fun AboutScreen() {
     val emailSupportSubject = stringResource(id = R.string.incidence_with_film_library) // Asunto del email
     val supportEmail = "andresmorenoblanc1996@gmail.com" // Correo de soporte
 
-    // Layout de la pantalla
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Texto con nombre de autor
-        Text(
-            text = aboutAuthorText,
-            style = TextStyle(fontSize = 24.sp)
-        )
-        Spacer(modifier = Modifier.height(10.dp)) // Espaciado entre texto e imagen
-        // Mostrar imagen
-        val image = painterResource(id = R.drawable.perfil)
-        Image(
-            painter = image,
-            contentDescription = "Icono Perfil",
-            modifier = Modifier.size(150.dp)
-        )
-        Spacer(modifier = Modifier.height(20.dp)) // Espaciado entre imagen y botones
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Acerca de") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
+        },
+        content = {
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), //Espaciado entre botones
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Boton Ir al sitio Web
-            Button(
-                onClick = {
-                    // Abre la página web cuando se presiona el botón
-                    abrirPaginaWeb("https://www.google.es", context) },
-                modifier = Modifier.weight(1f)
+            // Layout de la pantalla
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(text = webButtonText)
+                // Texto con nombre de autor
+                Text(
+                    text = aboutAuthorText,
+                    style = TextStyle(fontSize = 24.sp)
+                )
+                Spacer(modifier = Modifier.height(10.dp)) // Espaciado entre texto e imagen
+                // Mostrar imagen
+                val image = painterResource(id = R.drawable.perfil)
+                Image(
+                    painter = image,
+                    contentDescription = "Icono Perfil",
+                    modifier = Modifier.size(150.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp)) // Espaciado entre imagen y botones
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), //Espaciado entre botones
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Boton Ir al sitio Web
+                    Button(
+                        onClick = {
+                            // Abre la página web cuando se presiona el botón
+                            abrirPaginaWeb("https://www.google.es", context) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = webButtonText)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre botones
+                    // Boton "Obtener soporte"
+                    Button(
+                        onClick = {
+                            // Abre la aplicación de correo con el asunto predefinido
+                            mandarEmail(context = context, email = supportEmail, asunto = emailSupportSubject) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = supportButtonText)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre las filas de botones
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    // Boton "Volver"
+                    Button(onClick = {
+                        showToast(context = context, message = toastMessage) }) {
+                        Text(text = backButtonText)
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre botones
-            // Boton "Obtener soporte"
-            Button(
-                onClick = {
-                    // Abre la aplicación de correo con el asunto predefinido
-                    mandarEmail(context = context, email = supportEmail, asunto = emailSupportSubject) },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(text = supportButtonText)
-            }
-            Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre las filas de botones
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Boton "Volver"
-            Button(onClick = {
-                showToast(context = context, message = toastMessage) }) {
-                Text(text = backButtonText)
-            }
-        }
-    }
+    )
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmListScreen(navController: NavHostController) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Button(onClick = {
-            navController.navigate("filmData/Pelicula A") // Navegar a FilmDataScreen con el nombre de "Pelicula A"
-        }) {
-            Text(text = "Ver película A")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+    Scaffold (
+        topBar = {
+            TopAppBar(
+                title = { Text("Lista de Películas") },
+                actions = {}
+            )
+        },
+        content = {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Button(onClick = {
+                    navController.navigate("filmData/Pelicula A") // Navegar a FilmDataScreen con el nombre de "Pelicula A"
+                }) {
+                    Text(text = "Ver película A")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            navController.navigate("filmData/Pelicula B") // Navegar a FilmDataScreen con el nombre de "Pelicula B"
-        }) {
-            Text(text = "Ver película B")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {
+                    navController.navigate("filmData/Pelicula B") // Navegar a FilmDataScreen con el nombre de "Pelicula B"
+                }) {
+                    Text(text = "Ver película B")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            navController.navigate("aboutScreen") // Navegar a AboutScreen
-        }) {
-            Text(text = "Acerca de")
+                Button(onClick = {
+                    navController.navigate("aboutScreen") // Navegar a AboutScreen
+                }) {
+                    Text(text = "Acerca de")
+                }
+            }
         }
-    }
+    )
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmDataScreen(navController: NavHostController, movieName: String) {
     var edited by remember { mutableStateOf(false) }// Estado para verificar si se editó
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Datos de la película: $movieName") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
+        },
+        content = {
 
-    // UI principal
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Datos de la película: $movieName", style = TextStyle(fontSize = 24.sp))
+            // UI principal
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Datos de la película: $movieName", style = TextStyle(fontSize = 24.sp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = if (edited) "¡Película editada!" else "No se han realizado cambios.", style = TextStyle(fontSize = 18.sp))
+                Text(text = if (edited) "¡Película editada!" else "No se han realizado cambios.", style = TextStyle(fontSize = 18.sp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            // Navegamos a FilmEditScreen y esperamos un resultado
-            navController.navigate("filmEditScreen/$movieName")
-        }) {
-            Text(text = "Editar película")
+                Button(onClick = {
+                    // Navegamos a FilmEditScreen y esperamos un resultado
+                    navController.navigate("filmEditScreen/$movieName")
+                }) {
+                    Text(text = "Editar película")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    navController.popBackStack()  // Volver a la pantalla anterior
+                }) {
+                    Text(text = "Volver a la principal")
+                }
+            }
+
+            // Manejo del resultado al volver a esta pantalla
+            val backStackEntry = navController.currentBackStackEntryAsState().value
+            val result = backStackEntry?.savedStateHandle?.get<Boolean>("edited")
+            result?.let {
+                edited = it  // Actualizamos el estado según el resultado
+            }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            navController.popBackStack()  // Volver a la pantalla anterior
-        }) {
-            Text(text = "Volver a la principal")
-        }
-    }
-
-    // Manejo del resultado al volver a esta pantalla
-    val backStackEntry = navController.currentBackStackEntryAsState().value
-    val result = backStackEntry?.savedStateHandle?.get<Boolean>("edited")
-    result?.let {
-        edited = it  // Actualizamos el estado según el resultado
-    }
+    )
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmEditScreen(navController: NavHostController, movieName: String) {
     val context = LocalContext.current
     var changesMade by remember { mutableStateOf(false) }  // Para simular cambios
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Editando película: $movieName") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        // Si el usuario presiona el retroceso, devolvemos RESULT_CANCELED
+                        navController.previousBackStackEntry?.savedStateHandle?.set("edited", false)
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
+        },
+        content = {
 
-    // UI principal
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Editando película: $movieName", style = TextStyle(fontSize = 24.sp))
+            // UI principal
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Editando película: $movieName", style = TextStyle(fontSize = 24.sp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        // Simulamos que se hacen cambios
-        Button(onClick = {
-            changesMade = true  // Simula que se hizo un cambio
-        }) {
-            Text(text = "Hacer cambios")
+                // Simulamos que se hacen cambios
+                Button(onClick = {
+                    changesMade = true  // Simula que se hizo un cambio
+                }) {
+                    Text(text = "Hacer cambios")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    // Si se hizo un cambio, devolvemos el resultado de éxito
+                    navController.previousBackStackEntry?.savedStateHandle?.set("edited", true)
+                    navController.popBackStack()  // Regresamos a la pantalla anterior
+                }) {
+                    Text(text = "Guardar")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    // Si no se hicieron cambios, devolvemos el resultado de cancelación
+                    navController.previousBackStackEntry?.savedStateHandle?.set("edited", false)
+                    navController.popBackStack()  // Regresamos a la pantalla anterior
+                }) {
+                    Text(text = "Cancelar")
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            // Si se hizo un cambio, devolvemos el resultado de éxito
-            navController.previousBackStackEntry?.savedStateHandle?.set("edited", true)
-            navController.popBackStack()  // Regresamos a la pantalla anterior
-        }) {
-            Text(text = "Guardar")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            // Si no se hicieron cambios, devolvemos el resultado de cancelación
-            navController.previousBackStackEntry?.savedStateHandle?.set("edited", false)
-            navController.popBackStack()  // Regresamos a la pantalla anterior
-        }) {
-            Text(text = "Cancelar")
-        }
-    }
+    )
 }
 
 @Composable
@@ -286,7 +360,7 @@ fun NavigationGraph(navController: NavHostController) {
             FilmEditScreen(navController = navController, movieName = movieName ?: "Desconocida")
         }
         composable("aboutScreen") {
-            AboutScreen()
+            AboutScreen(navController)
         }
     }
 }
