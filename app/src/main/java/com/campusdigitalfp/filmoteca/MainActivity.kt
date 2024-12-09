@@ -1,6 +1,8 @@
 package com.campusdigitalfp.filmoteca
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -44,6 +46,29 @@ fun showToast(context: Context, message: String) {
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 
+// Función para abrir una página web
+fun abrirPaginaWeb(url: String, context: Context){
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse("https://www.instagram.com/andresmor96/") // Establecer la URL
+    }
+    context.startActivity(intent) // Inicia la actividad
+}
+
+// Función para mandar un correo electrónico
+fun mandarEmail(context: Context, email: String, asunto: String) {
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:$email") // Establece el destinatario del email
+        putExtra(Intent.EXTRA_SUBJECT, asunto) // Establece el asunto
+    }
+
+    // Verifica si hay una aplicación que pueda manejar el Intent
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent) // Inicia la actividad si hay un manejador
+    } else {
+        showToast(context, "No se encontró una aplicación de correo electrónico.")
+    }
+}
+
 @Composable
 fun AboutScreen() {
     val context = LocalContext.current
@@ -54,7 +79,8 @@ fun AboutScreen() {
     val supportButtonText = stringResource(id = R.string.support_button)
     val backButtonText = stringResource(id = back_button)
     val toastMessage = stringResource(id = R.string.toast_functionality_not_implemented)
-
+    val emailSupportSubject = stringResource(id = R.string.incidence_with_film_library) // Asunto del email
+    val supportEmail = "andresmorenoblanc1996@gmail.com" // Correo de soporte
 
     // Layout de la pantalla
     Column(
@@ -87,7 +113,8 @@ fun AboutScreen() {
             // Boton Ir al sitio Web
             Button(
                 onClick = {
-                    showToast(context = context, message = toastMessage) },
+                    // Abre la página web cuando se presiona el botón
+                    abrirPaginaWeb("https://www.google.es", context) },
                 modifier = Modifier.weight(1f)
             ) {
                 Text(text = webButtonText)
@@ -96,7 +123,8 @@ fun AboutScreen() {
             // Boton "Obtener soporte"
             Button(
                 onClick = {
-                    showToast(context = context, message = toastMessage) },
+                    // Abre la aplicación de correo con el asunto predefinido
+                    mandarEmail(context = context, email = supportEmail, asunto = emailSupportSubject) },
                 modifier = Modifier.weight(1f)
             ) {
                 Text(text = supportButtonText)

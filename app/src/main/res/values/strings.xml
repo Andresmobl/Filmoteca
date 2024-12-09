@@ -5,4 +5,5 @@
     <string name="support_button">Obtener soporte</string>
     <string name="back_button">Volver</string>
     <string name="toast_functionality_not_implemented">Funcionalidad sin implementar</string>
+    <string name="incidence_with_film_library">Error en APP</string>
 </resources>
