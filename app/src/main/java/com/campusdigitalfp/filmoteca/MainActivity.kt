@@ -30,6 +30,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -42,12 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Configuramos el NavController y el NavHost
             val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = "film_list_screen") {
-                composable("film_list_screen") { FilmListScreen(navController) }
-                composable("film_data_screen") { FilmDataScreen(navController) }
-                composable("film_edit_screen") { FilmEditScreen(navController) }
-                composable("about_screen") { AboutScreen() }
-            }
+            NavigationGraph(navController = navController)
         }
     }
 }
@@ -156,48 +152,65 @@ fun AboutScreen() {
 }
 
 @Composable
-fun FilmListScreen(navController: NavController) {
+fun FilmListScreen(navController: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { navController.navigate("film_data_screen") }) {
-            Text("Ver película A")
+        Button(onClick = {
+            navController.navigate("filmData/Pelicula A") // Navegar a FilmDataScreen con el nombre de "Pelicula A"
+        }) {
+            Text(text = "Ver película A")
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { navController.navigate("film_data_screen") }) {
-            Text("Ver película B")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            navController.navigate("filmData/Pelicula B") // Navegar a FilmDataScreen con el nombre de "Pelicula B"
+        }) {
+            Text(text = "Ver película B")
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { navController.navigate("about_screen") }) {
-            Text("Acerca de")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            navController.navigate("aboutScreen") // Navegar a AboutScreen
+        }) {
+            Text(text = "Acerca de")
         }
     }
 }
 
 @Composable
-fun FilmDataScreen(navController: NavController) {
+fun FilmDataScreen(navController: NavHostController, movieName: String?) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Datos de la película")
+        Text(text = "Datos de la película: $movieName", style = TextStyle(fontSize = 24.sp))
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigate("film_data_screen") }) {
-            Text("Ver película relacionada")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = { navController.navigate("film_edit_screen") }) {
-            Text("Editar película")
-        }
-        Spacer(modifier = Modifier.height(8.dp))
+
         Button(onClick = {
-            // Volver a la principal, eliminando las pantallas de la pila
-            navController.popBackStack("film_list_screen", inclusive = false)
+            navController.navigate("filmData/Pelicula relacionada") // Navegar a FilmDataScreen con la película relacionada
         }) {
-            Text("Volver a la principal")
+            Text(text = "Ver película relacionada")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            navController.navigate("filmEditScreen") // Navegar a FilmEditScreen
+        }) {
+            Text(text = "Editar película")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            navController.popBackStack() // Volver a la pantalla anterior
+        }) {
+            Text(text = "Volver a la principal")
         }
     }
 }
@@ -217,6 +230,25 @@ fun FilmEditScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { navController.popBackStack() }) {
             Text("Cancelar")
+        }
+    }
+}
+
+@Composable
+fun NavigationGraph(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "filmListScreen") {
+        composable("filmListScreen") {
+            FilmListScreen(navController = navController)
+        }
+        composable("filmData/{movieName}") { backStackEntry ->
+            val movieName = backStackEntry.arguments?.getString("movieName")
+            FilmDataScreen(navController = navController, movieName = movieName)
+        }
+        composable("filmEditScreen") {
+            FilmEditScreen(navController = navController)
+        }
+        composable("aboutScreen") {
+            AboutScreen()
         }
     }
 }
