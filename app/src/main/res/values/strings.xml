@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Filmoteca</string>
+    <string name="about_author">Creado por Andres Moreno</string>
+    <string name="web_button">Ir al sitio web</string>
+    <string name="support_button">Obtener soporte</string>
+    <string name="back_button">Volver</string>
+    <string name="toast_functionality_not_implemented">Funcionalidad sin implementar</string>
 </resources>

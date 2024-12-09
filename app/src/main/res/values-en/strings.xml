@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Filmoteca</string>
+    <string name="about_author">Created by Andres Moreno</string>
+    <string name="web_button">Go to website</string>
+    <string name="support_button">Get support</string>
+    <string name="back_button">Back</string>
+    <string name="toast_functionality_not_implemented">Functionality not implemented</string>
+</resources>

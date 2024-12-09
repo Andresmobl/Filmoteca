@@ -1,5 +1,6 @@
 package com.campusdigitalfp.filmoteca
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -22,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.campusdigitalfp.filmoteca.R.string.back_button
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,14 +39,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Función para mostrar un Toast, definida fuera del composable
+fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
 @Composable
 fun AboutScreen() {
-    val  context = LocalContext.current // Contexto para mostrar el Toast
+    val context = LocalContext.current
 
-    // Función para mostrar el Toast
-    fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+    // Resolvemos los textos fuera de showToast
+    val aboutAuthorText = stringResource(id = R.string.about_author)
+    val webButtonText = stringResource(id = R.string.web_button)
+    val supportButtonText = stringResource(id = R.string.support_button)
+    val backButtonText = stringResource(id = back_button)
+    val toastMessage = stringResource(id = R.string.toast_functionality_not_implemented)
+
 
     // Layout de la pantalla
     Column(
@@ -55,43 +66,52 @@ fun AboutScreen() {
     ) {
         // Texto con nombre de autor
         Text(
-            text = "Creado por Andres Moreno",
+            text = aboutAuthorText,
             style = TextStyle(fontSize = 24.sp)
         )
         Spacer(modifier = Modifier.height(10.dp)) // Espaciado entre texto e imagen
         // Mostrar imagen
         val image = painterResource(id = R.drawable.perfil)
-        Image(painter = image, contentDescription = "Icono Perfil", modifier = Modifier.size(150.dp))
+        Image(
+            painter = image,
+            contentDescription = "Icono Perfil",
+            modifier = Modifier.size(150.dp)
+        )
         Spacer(modifier = Modifier.height(20.dp)) // Espaciado entre imagen y botones
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), //Espaciado entre botonos
+            horizontalArrangement = Arrangement.spacedBy(8.dp), //Espaciado entre botones
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Boton Ir al sitio Web
-            Button(onClick = { showToast("Funcionalidad sin implementar") },
+            Button(
+                onClick = {
+                    showToast(context = context, message = toastMessage) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text(text = "Ir al sitio web")
+                Text(text = webButtonText)
             }
             Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre botones
             // Boton "Obtener soporte"
-            Button(onClick = { showToast("Funcionalidad sin implementar") },
+            Button(
+                onClick = {
+                    showToast(context = context, message = toastMessage) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text(text = "Obtener soporte")
+                Text(text = supportButtonText)
             }
             Spacer(modifier = Modifier.height(8.dp)) // Espaciado entre las filas de botones
-            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
             // Boton "Volver"
-            Button(onClick = { showToast("Funcionalidad sin implementar") }) {
-                Text(text = "Volver")
-        }
+            Button(onClick = {
+                showToast(context = context, message = toastMessage) }) {
+                Text(text = backButtonText)
+            }
         }
     }
 }
