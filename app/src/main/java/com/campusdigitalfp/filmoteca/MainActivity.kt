@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,16 +36,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 
@@ -66,11 +69,9 @@ fun showToast(context: Context, message: String) {
 }
 
 // Función para abrir una página web
-fun abrirPaginaWeb(url: String, context: Context){
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        data = Uri.parse("https://www.instagram.com/andresmor96/") // Establecer la URL
-    }
-    context.startActivity(intent) // Inicia la actividad
+fun abrirPaginaWeb(url: String, context: Context) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    context.startActivity(intent)
 }
 
 // Función para mandar un correo electrónico
@@ -226,11 +227,18 @@ fun FilmListScreen(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmDataScreen(navController: NavHostController, movieName: String) {
-    var edited by remember { mutableStateOf(false) }// Estado para verificar si se editó
+    val context = LocalContext.current // Extrae el contexto aquí
+    // Datos de la película (puedes reemplazar con datos dinámicos)
+    val nombre = "Harry Potter y la piedra filosofal"
+    val director = "Chris Columbus"
+    val releaseYear = "2001"
+    val genre = "BluRay, Sci-Fi"
+    val imdbLink = "https://www.imdb.com/title/tt0241527/"
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Datos de la película: $movieName") },
+                title = { Text("Datos de la película: $nombre") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -238,43 +246,110 @@ fun FilmDataScreen(navController: NavHostController, movieName: String) {
                 }
             )
         },
-        content = {
+        content = { paddingValues ->
 
-            // UI principal
             Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                verticalArrangement = Arrangement.Top
             ) {
-                Text(text = "Datos de la película: $movieName", style = TextStyle(fontSize = 24.sp))
+                // Row para la imagen y textos
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Imagen a la izquierda
+                    Image(
+                        painter = painterResource(id = R.drawable.harrypotterpiedrafilosofal),
+                        contentDescription = "Cartel Pelicula",
+                        modifier = Modifier
+                            .fillMaxHeight(0.3f) // Usa el 30% de la altura del contenedor
+                            .padding(end = 16.dp),
+                        contentScale = ContentScale.Fit
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(text = if (edited) "¡Película editada!" else "No se han realizado cambios.", style = TextStyle(fontSize = 18.sp))
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(onClick = {
-                    // Navegamos a FilmEditScreen y esperamos un resultado
-                    navController.navigate("filmEditScreen/$movieName")
-                }) {
-                    Text(text = "Editar película")
+                    // Columna con textos a la derecha de la imagen
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = nombre,
+                            style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                            color = Color.Blue
+                        )
+                        Text(
+                            text = "Director: ",
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = director,
+                            style = TextStyle(fontSize = 16.sp)
+                        )
+                        Text(
+                            text = "Año: ",
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = releaseYear,
+                            style = TextStyle(fontSize = 16.sp)
+                        )
+                        Text(
+                            text = genre,
+                            style = TextStyle(fontSize = 16.sp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = {
-                    navController.popBackStack()  // Volver a la pantalla anterior
-                }) {
-                    Text(text = "Volver a la principal")
+                // Botón debajo
+                Button(
+                    onClick = {
+                        abrirPaginaWeb(imdbLink, context)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth() // Ocupa todo el ancho
+                        .padding(horizontal = 16.dp) // Margen horizontal para que no toque los bordes
+                ) {
+                    Text(text = "Ver en IMDB")
                 }
-            }
+                Text(
+                    text = "Version extendida",
+                    style = TextStyle(fontSize = 16.sp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                )
+                // Row con los botones "Volver" y "Editar" ocupando la mitad de espacio cada uno
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp) // Espacio entre los botones
+                ) {
+                    // Botón Volver
+                    Button(
+                        onClick = {
+                            navController.navigate("FilmListScreen") // Navega a FilmListScreen
+                        },
+                        modifier = Modifier.weight(1f) // El botón ocupa la mitad del espacio disponible
+                    ) {
+                        Text(text = "Volver")
+                    }
 
-            // Manejo del resultado al volver a esta pantalla
-            val backStackEntry = navController.currentBackStackEntryAsState().value
-            val result = backStackEntry?.savedStateHandle?.get<Boolean>("edited")
-            result?.let {
-                edited = it  // Actualizamos el estado según el resultado
+                    Button(
+                        onClick = {
+                            navController.navigate("filmEditScreen/$movieName") // Pasar el nombre de la película como argumento
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "Editar")
+                    }
+                }
             }
         }
     )
