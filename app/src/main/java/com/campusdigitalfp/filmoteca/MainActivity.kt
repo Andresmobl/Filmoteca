@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -76,6 +74,7 @@ fun abrirPaginaWeb(url: String, context: Context){
 }
 
 // Función para mandar un correo electrónico
+@SuppressLint("QueryPermissionsNeeded")
 fun mandarEmail(context: Context, email: String, asunto: String) {
     val intent = Intent(Intent.ACTION_SENDTO).apply {
         data = Uri.parse("mailto:$email") // Establece el destinatario del email
@@ -234,7 +233,7 @@ fun FilmDataScreen(navController: NavHostController, movieName: String) {
                 title = { Text("Datos de la película: $movieName") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -285,7 +284,7 @@ fun FilmDataScreen(navController: NavHostController, movieName: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmEditScreen(navController: NavHostController, movieName: String) {
-    val context = LocalContext.current
+
     var changesMade by remember { mutableStateOf(false) }  // Para simular cambios
     Scaffold(
         topBar = {
@@ -297,7 +296,7 @@ fun FilmEditScreen(navController: NavHostController, movieName: String) {
                         navController.previousBackStackEntry?.savedStateHandle?.set("edited", false)
                         navController.popBackStack()
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
