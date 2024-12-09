@@ -29,6 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +40,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AboutScreen()
+            // Configuramos el NavController y el NavHost
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = "film_list_screen") {
+                composable("film_list_screen") { FilmListScreen(navController) }
+                composable("film_data_screen") { FilmDataScreen(navController) }
+                composable("film_edit_screen") { FilmEditScreen(navController) }
+                composable("about_screen") { AboutScreen() }
+            }
         }
     }
 }
@@ -143,3 +154,71 @@ fun AboutScreen() {
         }
     }
 }
+
+@Composable
+fun FilmListScreen(navController: NavController) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Button(onClick = { navController.navigate("film_data_screen") }) {
+            Text("Ver película A")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { navController.navigate("film_data_screen") }) {
+            Text("Ver película B")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { navController.navigate("about_screen") }) {
+            Text("Acerca de")
+        }
+    }
+}
+
+@Composable
+fun FilmDataScreen(navController: NavController) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Datos de la película")
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = { navController.navigate("film_data_screen") }) {
+            Text("Ver película relacionada")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { navController.navigate("film_edit_screen") }) {
+            Text("Editar película")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = {
+            // Volver a la principal, eliminando las pantallas de la pila
+            navController.popBackStack("film_list_screen", inclusive = false)
+        }) {
+            Text("Volver a la principal")
+        }
+    }
+}
+
+@Composable
+fun FilmEditScreen(navController: NavController) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Editando película")
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = { navController.popBackStack() }) {
+            Text("Guardar")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { navController.popBackStack() }) {
+            Text("Cancelar")
+        }
+    }
+}
+
+
