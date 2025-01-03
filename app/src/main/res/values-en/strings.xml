@@ -7,4 +7,18 @@
     <string name="back_button">Back</string>
     <string name="toast_functionality_not_implemented">Functionality not implemented</string>
     <string name="incidence_with_film_library">Error in APP</string>
+    <string-array name="genero_list">
+        <item>Action</item>
+        <item>Comedy</item>
+        <item>Drama</item>
+        <item>Fantasy</item>
+        <item>Science Fiction</item>
+    </string-array>
+
+    <string-array name="formato_list">
+        <item>DVD</item>
+        <item>Blu-ray</item>
+        <item>Streaming</item>
+        <item>4K Ultra HD</item>
+    </string-array>
 </resources>
