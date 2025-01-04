@@ -210,25 +210,53 @@ fun FilmListScreen(navController: NavHostController) {
             )
         },
         content = { paddingValues ->
-            LazyColumn (
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(films) { film ->
-                    Text(
-                        text = film.title ?: "<Sin título>",
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                            .padding(16.dp)
+                            .clickable {
+                                navController.navigate("filmData/${film.title}")
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(id = film.imageResId),
+                            contentDescription = "Cartel de ${film.title}",
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = film.title ?: "<Sin título>",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = film.director ?: "<Sin director>",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 }
             }
         }
     )
 }
+
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
