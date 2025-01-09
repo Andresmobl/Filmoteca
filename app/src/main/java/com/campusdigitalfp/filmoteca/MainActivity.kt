@@ -27,7 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -63,6 +62,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -106,7 +108,6 @@ fun mandarEmail(context: Context, email: String, asunto: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AboutScreen(navController: NavHostController) {
@@ -123,14 +124,7 @@ fun AboutScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Acerca de") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
+            FilmotecaAppBar(navController = navController, title = "Acerca de")
         },
         content = {
 
@@ -202,12 +196,53 @@ fun AboutScreen(navController: NavHostController) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmListScreen(navController: NavHostController) {
-    val films = FilmDataSource.films
-
+    // Lista mutable respaldada por un estado para refrescar automáticamente
+    val films = remember { mutableStateListOf(*FilmDataSource.films.toTypedArray()) }
+    var isMenuExpanded by remember { mutableStateOf(false) } // Estado para el menú desplegable
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lista de Películas") }
+                title = { Text("Filmoteca") },
+                actions = {
+                    // Icono del menú de opciones
+                    IconButton(onClick = { isMenuExpanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                    }
+
+                    // Menú desplegable
+                    DropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Añadir Película") },
+                            onClick = {
+                                // Añade una película con datos por defecto
+                                films.add(
+                                    Film(
+                                        id = films.size + 1,
+                                        title = "Nueva Película",
+                                        director = "Director por defecto",
+                                        year = 2023,
+                                        genre = Film.GENRE_ACTION,
+                                        format = Film.FORMAT_DVD,
+                                        imageResId = R.drawable.defecto,
+                                        imdbUrl = "https://www.imdb.com",
+                                        comments = "Comentarios por defecto"
+                                    )
+                                )
+                                isMenuExpanded = false // Cierra el menú
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Acerca de") },
+                            onClick = {
+                                navController.navigate("aboutScreen") // Navega a la pantalla "Acerca de"
+                                isMenuExpanded = false // Cierra el menú
+                            }
+                        )
+                    }
+                }
             )
         },
         content = { paddingValues ->
@@ -259,7 +294,6 @@ fun FilmListScreen(navController: NavHostController) {
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilmDataScreen(navController: NavHostController, filmId: Int) {
     val film = FilmDataSource.films.find { it.id == filmId }
@@ -270,14 +304,7 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Filmoteca") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
+            FilmotecaAppBar(navController = navController, title = "Datos de la película")
         },
         content = { paddingValues ->
 
@@ -393,7 +420,6 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmEditScreen(navController: NavHostController, filmId: Int) {
@@ -421,14 +447,7 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Editar Película") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
+            FilmotecaAppBar(navController = navController, title = "Editar Datos")
         },
         content = { paddingValues ->
             Column(
@@ -762,4 +781,38 @@ object FilmDataSource {
 
         // Añade más películas si deseas!
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@Composable
+fun FilmotecaAppBar(navController: NavHostController, title: String) {
+    TopAppBar(
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable {
+                            // Navega al listado de películas
+                            navController.navigate("filmListScreen") {
+                                popUpTo("filmListScreen") { inclusive = true } // Evita volver atrás
+                            }
+                        }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Home, // Ícono de casa
+                        contentDescription = "Volver al listado",
+                        modifier = Modifier.size(24.dp), // Tamaño del ícono
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(title) // Título de la pantalla
+            }
+        }
+    )
 }
