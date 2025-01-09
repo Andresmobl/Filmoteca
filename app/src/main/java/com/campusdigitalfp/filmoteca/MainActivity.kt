@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,10 +29,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,10 +63,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavType
@@ -468,6 +469,7 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmEditScreen(navController: NavHostController, filmId: Int) {
+    val TAG = "FilmEditScreen" // Etiqueta para los logs
 
     val film = FilmDataSource.films.find { it.id == filmId }
         ?: return // Maneja el caso de película no encontrada
@@ -485,7 +487,6 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
     val context = LocalContext.current
     val generoList = context.resources.getStringArray(R.array.genero_list).toList()
     val formatoList = context.resources.getStringArray(R.array.formato_list).toList()
-
 
     var genero by remember { mutableIntStateOf(film.genre) }
     var formato by remember { mutableIntStateOf(film.format) }
@@ -508,13 +509,12 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                   Image(
+                    Image(
                         painter = painterResource(id = imagen),
                         contentDescription = "Cartel de titulo",
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -664,6 +664,8 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                                 // Muestra un Toast indicando que los datos han sido guardados
                                 Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
 
+                                // Log de guardado de datos
+                                Log.i(TAG, "Cambios guardados para la película con ID: $filmId")
                             }
 
                             // Vuelve a la pantalla anterior
@@ -677,7 +679,11 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
-                        onClick = { navController.popBackStack() },
+                        onClick = {
+                            // Log de cancelación de cambios
+                            Log.i(TAG, "Cambios descartados para la película con ID: $filmId")
+                            navController.popBackStack()
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Cancelar")
