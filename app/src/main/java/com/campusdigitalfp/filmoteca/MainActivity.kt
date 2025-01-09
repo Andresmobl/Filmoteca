@@ -794,7 +794,7 @@ fun FilmotecaAppBar(navController: NavHostController, title: String) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(45.dp)
                         .clickable {
                             // Navega al listado de películas
                             navController.navigate("filmListScreen") {
