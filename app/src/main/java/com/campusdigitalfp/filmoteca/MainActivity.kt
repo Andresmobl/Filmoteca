@@ -9,9 +9,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +65,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.campusdigitalfp.filmoteca.R.string.back_button
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.mutableStateListOf
@@ -192,55 +197,72 @@ fun AboutScreen(navController: NavHostController) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmListScreen(navController: NavHostController) {
     // Lista mutable respaldada por un estado para refrescar automáticamente
     val films = remember { mutableStateListOf(*FilmDataSource.films.toTypedArray()) }
-    var isMenuExpanded by remember { mutableStateOf(false) } // Estado para el menú desplegable
+
+    // Estado para el menú desplegable y selección múltiple
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    val selectedFilms = remember { mutableStateListOf<Int>() }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Filmoteca") },
+                title = {
+                    Text(
+                        text = "Filmoteca"
+                    )
+                },
                 actions = {
-                    // Icono del menú de opciones
-                    IconButton(onClick = { isMenuExpanded = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
-                    }
-
-                    // Menú desplegable
-                    DropdownMenu(
-                        expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Añadir Película") },
-                            onClick = {
-                                // Añade una película con datos por defecto
-                                films.add(
-                                    Film(
-                                        id = films.size + 1,
-                                        title = "Nueva Película",
-                                        director = "Director por defecto",
-                                        year = 2023,
-                                        genre = Film.GENRE_ACTION,
-                                        format = Film.FORMAT_DVD,
-                                        imageResId = R.drawable.defecto,
-                                        imdbUrl = "https://www.imdb.com",
-                                        comments = "Comentarios por defecto"
+                    // Mostrar papelera cuando hay selecciones
+                    if (selectedFilms.isNotEmpty()) {
+                        IconButton(onClick = {
+                            // Elimina las películas seleccionadas
+                            films.removeAll { it.id in selectedFilms }
+                            selectedFilms.clear() // Limpia la selección
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar seleccionados")
+                        }
+                    } else {
+                        // Menú desplegable normal
+                        IconButton(onClick = { isMenuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                        }
+                        DropdownMenu(
+                            expanded = isMenuExpanded,
+                            onDismissRequest = { isMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Añadir Película") },
+                                onClick = {
+                                    // Añade una película con datos por defecto
+                                    films.add(
+                                        Film(
+                                            id = films.size + 1,
+                                            title = "Nueva Película",
+                                            director = "Director por defecto",
+                                            year = 2023,
+                                            genre = Film.GENRE_ACTION,
+                                            format = Film.FORMAT_DVD,
+                                            imageResId = R.drawable.defecto,
+                                            imdbUrl = "https://www.imdb.com",
+                                            comments = "Comentarios por defecto"
+                                        )
                                     )
-                                )
-                                isMenuExpanded = false // Cierra el menú
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Acerca de") },
-                            onClick = {
-                                navController.navigate("aboutScreen") // Navega a la pantalla "Acerca de"
-                                isMenuExpanded = false // Cierra el menú
-                            }
-                        )
+                                    isMenuExpanded = false // Cierra el menú
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Acerca de") },
+                                onClick = {
+                                    navController.navigate("aboutScreen") // Navega a la pantalla "Acerca de"
+                                    isMenuExpanded = false // Cierra el menú
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -253,22 +275,46 @@ fun FilmListScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(films) { film ->
+                    val isSelected = film.id in selectedFilms
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
-                            .clickable {
-                                navController.navigate("filmDataScreen/${film.id}")
-                            },
+                            .background(if (isSelected) Color(0xFFE8F5E9) else Color.Transparent)
+                            .combinedClickable(
+                                onClick = {
+                                    if (selectedFilms.isNotEmpty()) {
+                                        // Alternar selección si ya estamos en modo selección
+                                        if (isSelected) selectedFilms.remove(film.id)
+                                        else selectedFilms.add(film.id)
+                                    } else {
+                                        // Navegar al detalle si no estamos en modo selección
+                                        navController.navigate("filmDataScreen/${film.id}")
+                                    }
+                                },
+                                onLongClick = {
+                                    // Inicia el modo selección al mantener pulsado
+                                    selectedFilms.add(film.id)
+                                }
+                            ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = film.imageResId),
-                            contentDescription = "Cartel de ${film.title}",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Seleccionado",
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(100.dp)
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = film.imageResId),
+                                contentDescription = "Cartel de ${film.title}",
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                        }
 
                         Spacer(modifier = Modifier.width(16.dp))
 
@@ -291,7 +337,6 @@ fun FilmListScreen(navController: NavHostController) {
         }
     )
 }
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
