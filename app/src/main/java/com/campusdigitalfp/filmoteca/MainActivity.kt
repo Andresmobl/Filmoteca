@@ -71,7 +71,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -198,34 +201,51 @@ fun AboutScreen(navController: NavHostController) {
     )
 }
 
+// ViewModel para gestionar las películas
+class FilmViewModel : ViewModel() {
+    // Lista de películas
+    val films: SnapshotStateList<Film> = mutableStateListOf(*FilmDataSource.films.toTypedArray())
+
+    // Función para añadir una nueva película
+    fun addFilm(film: Film) {
+        films.add(film)
+    }
+
+    // Función para eliminar películas seleccionadas
+    fun removeFilms(selectedFilmIds: List<Int>) {
+        films.removeAll { it.id in selectedFilmIds }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmListScreen(navController: NavHostController) {
-    // Lista mutable respaldada por un estado para refrescar automáticamente
+    // Obtener las películas desde FilmDataSource
     val films = remember { mutableStateListOf(*FilmDataSource.films.toTypedArray()) }
 
-    // Estado para el menú desplegable y selección múltiple
     var isMenuExpanded by remember { mutableStateOf(false) }
-    val selectedFilms = remember { mutableStateListOf<Int>() }
+    val selectedFilms = remember { mutableStateListOf<Int>() } // IDs seleccionados
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Filmoteca"
+                        if (selectedFilms.isNotEmpty()) "${selectedFilms.size} seleccionadas"
+                        else "Filmoteca"
                     )
                 },
                 actions = {
-                    // Mostrar papelera cuando hay selecciones
+                    // Mostrar papelera si hay películas seleccionadas
                     if (selectedFilms.isNotEmpty()) {
                         IconButton(onClick = {
                             // Elimina las películas seleccionadas
                             films.removeAll { it.id in selectedFilms }
-                            selectedFilms.clear() // Limpia la selección
+                            FilmDataSource.films.removeAll { it.id in selectedFilms }
+                            selectedFilms.clear()
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar seleccionados")
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar seleccionadas")
                         }
                     } else {
                         // Menú desplegable normal
@@ -239,28 +259,26 @@ fun FilmListScreen(navController: NavHostController) {
                             DropdownMenuItem(
                                 text = { Text("Añadir Película") },
                                 onClick = {
-                                    // Añade una película con datos por defecto
-                                    films.add(
-                                        Film(
-                                            id = films.size + 1,
-                                            title = "Nueva Película",
-                                            director = "Director por defecto",
-                                            year = 2023,
-                                            genre = Film.GENRE_ACTION,
-                                            format = Film.FORMAT_DVD,
-                                            imageResId = R.drawable.defecto,
-                                            imdbUrl = "https://www.imdb.com",
-                                            comments = "Comentarios por defecto"
-                                        )
+                                    FilmDataSource.addFilm(
+                                        title = "Nueva Película",
+                                        director = "Director por defecto",
+                                        imageResId = R.drawable.defecto,
+                                        comments = "Comentarios por defecto",
+                                        format = Film.FORMAT_DVD,
+                                        genre = Film.GENRE_ACTION,
+                                        imdbUrl = "https://www.imdb.com",
+                                        year = 2023
                                     )
-                                    isMenuExpanded = false // Cierra el menú
+                                    films.clear()
+                                    films.addAll(FilmDataSource.films) // Refresca la lista local
+                                    isMenuExpanded = false
                                 }
                             )
                             DropdownMenuItem(
                                 text = { Text("Acerca de") },
                                 onClick = {
-                                    navController.navigate("aboutScreen") // Navega a la pantalla "Acerca de"
-                                    isMenuExpanded = false // Cierra el menú
+                                    navController.navigate("aboutScreen")
+                                    isMenuExpanded = false
                                 }
                             )
                         }
@@ -285,7 +303,7 @@ fun FilmListScreen(navController: NavHostController) {
                             .combinedClickable(
                                 onClick = {
                                     if (selectedFilms.isNotEmpty()) {
-                                        // Alternar selección si ya estamos en modo selección
+                                        // Alternar selección si estamos en modo selección
                                         if (isSelected) selectedFilms.remove(film.id)
                                         else selectedFilms.add(film.id)
                                     } else {
@@ -294,8 +312,10 @@ fun FilmListScreen(navController: NavHostController) {
                                     }
                                 },
                                 onLongClick = {
-                                    // Inicia el modo selección al mantener pulsado
-                                    selectedFilms.add(film.id)
+                                    // Inicia modo selección al mantener pulsado
+                                    if (!selectedFilms.contains(film.id)) {
+                                        selectedFilms.add(film.id)
+                                    }
                                 }
                             ),
                         verticalAlignment = Alignment.CenterVertically
@@ -792,45 +812,65 @@ object FilmDataSource {
 
     init {
         // Primera película: Harry Potter y la piedra filosofal
-        val f1 = Film()
-        f1.id = films.size
-        f1.title = "Harry Potter y la piedra filosofal"
-        f1.director = "Chris Columbus"
-        f1.imageResId = R.drawable.harrypotterpiedrafilosofal
-        f1.comments = "Una aventura mágica en Hogwarts."
-        f1.format = Film.FORMAT_DVD
-        f1.genre = Film.GENRE_ACTION // Cambia según corresponda
-        f1.imdbUrl = "http://www.imdb.com/title/tt0241527"
-        f1.year = 2001
-        films.add(f1)
+        addFilm(
+            title = "Harry Potter y la piedra filosofal",
+            director = "Chris Columbus",
+            imageResId = R.drawable.harrypotterpiedrafilosofal,
+            comments = "Una aventura mágica en Hogwarts.",
+            format = Film.FORMAT_DVD,
+            genre = Film.GENRE_ACTION,
+            imdbUrl = "http://www.imdb.com/title/tt0241527",
+            year = 2001
+        )
 
         // Segunda película: Regreso al futuro
-        val f2 = Film()
-        f2.id = films.size
-        f2.title = "Regreso al futuro"
-        f2.director = "Robert Zemeckis"
-        f2.imageResId = R.drawable.regresoalfuturo
-        f2.comments = ""
-        f2.format = Film.FORMAT_DIGITAL
-        f2.genre = Film.GENRE_SCIFI
-        f2.imdbUrl = "http://www.imdb.com/title/tt0088763"
-        f2.year = 1985
-        films.add(f2)
+        addFilm(
+            title = "Regreso al futuro",
+            director = "Robert Zemeckis",
+            imageResId = R.drawable.regresoalfuturo,
+            comments = "Una aventura épica en el tiempo.",
+            format = Film.FORMAT_DIGITAL,
+            genre = Film.GENRE_SCIFI,
+            imdbUrl = "http://www.imdb.com/title/tt0088763",
+            year = 1985
+        )
 
         // Tercera película: El rey león
-        val f3 = Film()
-        f3.id = films.size
-        f3.title = "El rey león"
-        f3.director = "Roger Allers, Rob Minkoff"
-        f3.imageResId = R.drawable.reyleon
-        f3.comments = "Una historia de crecimiento y responsabilidad."
-        f3.format = Film.FORMAT_BLURAY
-        f3.genre = Film.GENRE_ACTION // Cambia según corresponda
-        f3.imdbUrl = "http://www.imdb.com/title/tt0110357"
-        f3.year = 1994
-        films.add(f3)
+        addFilm(
+            title = "El Rey León",
+            director = "Roger Allers, Rob Minkoff",
+            imageResId = R.drawable.reyleon,
+            comments = "Una historia de crecimiento y responsabilidad.",
+            format = Film.FORMAT_BLURAY,
+            genre = Film.GENRE_DRAMA,
+            imdbUrl = "http://www.imdb.com/title/tt0110357",
+            year = 1994
+        )
+    }
 
-        // Añade más películas si deseas!
+    // Función para añadir una película con datos
+    fun addFilm(
+        title: String,
+        director: String,
+        imageResId: Int,
+        comments: String,
+        format: Int,
+        genre: Int,
+        imdbUrl: String,
+        year: Int
+    ) {
+        val newFilm = Film(
+            id = (films.maxOfOrNull { it.id } ?: 0) + 1, // Generar ID único
+            title = title,
+            director = director,
+            imageResId = imageResId,
+            comments = comments,
+            format = format,
+            genre = genre,
+            imdbUrl = imdbUrl,
+            year = year
+        )
+        films.add(newFilm)
     }
 }
 
