@@ -24,20 +24,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.campusdigitalfp.filmoteca.R
 import com.campusdigitalfp.filmoteca.model.Film
-import com.campusdigitalfp.filmoteca.model.FilmDataSource
+import com.campusdigitalfp.filmoteca.viewmodel.FilmViewModel
 
 @RequiresApi(Build.VERSION_CODES.N)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun FilmListScreen(navController: NavHostController) {
-    // Estado que mantiene la lista de películas y se actualiza en tiempo real
-    val films = remember { mutableStateListOf(*FilmDataSource.films.toTypedArray()) }
+fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel) {
+    // 🔥 Estado que obtiene la lista de películas en tiempo real desde Firestore
+    val films by viewModel.films.collectAsState()
 
     var isMenuExpanded by remember { mutableStateOf(false) }
-    val selectedFilms = remember { mutableStateListOf<Int>() } // IDs seleccionados
+    val selectedFilms = remember { mutableStateListOf<String>() } // 🔥 Ahora es `String`, no `Int`
 
     Scaffold(
         topBar = {
@@ -51,8 +50,7 @@ fun FilmListScreen(navController: NavHostController) {
                 actions = {
                     if (selectedFilms.isNotEmpty()) {
                         IconButton(onClick = {
-                            films.removeAll { it.id in selectedFilms }
-                            FilmDataSource.films.removeAll { it.id in selectedFilms }
+                            selectedFilms.forEach { id -> viewModel.deleteFilm(id) } // 🔥 Ahora se eliminan desde Firestore
                             selectedFilms.clear()
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Eliminar seleccionadas")
@@ -68,19 +66,18 @@ fun FilmListScreen(navController: NavHostController) {
                             DropdownMenuItem(
                                 text = { Text("Añadir Película") },
                                 onClick = {
-                                    val newFilm = Film(
-                                        id = (films.maxOfOrNull { it.id } ?: 0) + 1, // Generar un ID único
-                                        title = "Nueva Película",
-                                        director = "Director por defecto",
-                                        imageResId = R.drawable.defecto,
-                                        comments = "Comentarios por defecto",
-                                        format = Film.FORMAT_DVD,
-                                        genre = Film.GENRE_ACTION,
-                                        imdbUrl = "https://www.imdb.com",
-                                        year = 2023
+                                    viewModel.addFilm(
+                                        Film(
+                                            title = "Nueva Película",
+                                            director = "Director por defecto",
+                                            image = "defecto", // 🔥 Se usa el nombre del recurso drawable
+                                            comments = "Comentarios por defecto",
+                                            format = Film.FORMAT_DVD,
+                                            genre = Film.GENRE_ACTION,
+                                            imdbUrl = "https://www.imdb.com",
+                                            year = 2023
+                                        )
                                     )
-                                    FilmDataSource.films.add(newFilm) // Agregar la película a la fuente de datos
-                                    films.add(newFilm) // Agregar la película a la lista en pantalla
                                     isMenuExpanded = false
                                 }
                             )
@@ -104,7 +101,8 @@ fun FilmListScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(films) { film ->
-                    val isSelected = film.id in selectedFilms
+                    val isSelected = selectedFilms.contains(film.id) // 🔥 Ahora `id` es `String`
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -136,7 +134,7 @@ fun FilmListScreen(navController: NavHostController) {
                             )
                         } else {
                             Image(
-                                painter = painterResource(id = film.imageResId),
+                                painter = painterResource(id = Film.getImageResource(film.image)), // 🔥 Ahora usamos `getImageResource()`
                                 contentDescription = "Cartel de ${film.title}",
                                 modifier = Modifier
                                     .size(100.dp)
@@ -150,11 +148,11 @@ fun FilmListScreen(navController: NavHostController) {
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = film.title ?: "<Sin título>",
+                                text = film.title,
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = film.director ?: "<Sin director>",
+                                text = film.director,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray
                             )

@@ -8,48 +8,38 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.campusdigitalfp.filmoteca.ui.vistas.AboutScreen
-import com.campusdigitalfp.filmoteca.ui.vistas.FilmDataScreen
-import com.campusdigitalfp.filmoteca.ui.vistas.FilmEditScreen
-import com.campusdigitalfp.filmoteca.ui.vistas.FilmListScreen
+import com.campusdigitalfp.filmoteca.ui.vistas.*
+import com.campusdigitalfp.filmoteca.viewmodel.FilmViewModel
 
 @RequiresApi(Build.VERSION_CODES.N)
 @Composable
-fun NavigationGraph(navController: NavHostController) {
+fun NavigationGraph(navController: NavHostController, filmViewModel: FilmViewModel) {
     NavHost(navController = navController, startDestination = "filmListScreen") {
 
-        // Pantalla principal de lista de películas
         composable("filmListScreen") {
-            FilmListScreen(navController = navController)
+            FilmListScreen(navController = navController, viewModel = filmViewModel)
         }
 
-        // Pantalla de detalles de la película
         composable(
             route = "filmDataScreen/{filmId}",
-            arguments = listOf(navArgument("filmId") { type = NavType.IntType })
+            arguments = listOf(navArgument("filmId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val filmId = backStackEntry.arguments?.getInt("filmId") ?: -1
-            if (filmId >= 0) {
-                FilmDataScreen(navController = navController, filmId = filmId)
-            } else {
-                navController.navigate("filmListScreen") // Redirigir a la lista en caso de error
+            val filmId = backStackEntry.arguments?.getString("filmId")
+            if (filmId != null) {
+                FilmDataScreen(navController = navController, filmId = filmId, viewModel = filmViewModel)
             }
         }
 
-        // Pantalla de edición de la película
         composable(
             route = "filmEditScreen/{filmId}",
-            arguments = listOf(navArgument("filmId") { type = NavType.IntType })
+            arguments = listOf(navArgument("filmId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val filmId = backStackEntry.arguments?.getInt("filmId") ?: -1
-            if (filmId >= 0) {
-                FilmEditScreen(navController = navController, filmId = filmId)
-            } else {
-                navController.navigate("filmListScreen") // Redirigir a la lista en caso de error
+            val filmId = backStackEntry.arguments?.getString("filmId")
+            if (filmId != null) {
+                FilmEditScreen(navController = navController, filmId = filmId, viewModel = filmViewModel)
             }
         }
 
-        // Pantalla "Acerca de"
         composable("aboutScreen") {
             AboutScreen(navController)
         }

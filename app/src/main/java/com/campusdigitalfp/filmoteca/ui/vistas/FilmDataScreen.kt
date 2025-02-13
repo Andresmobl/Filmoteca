@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,13 +19,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.campusdigitalfp.filmoteca.model.FilmDataSource
+import com.campusdigitalfp.filmoteca.model.Film
+import com.campusdigitalfp.filmoteca.viewmodel.FilmViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilmDataScreen(navController: NavHostController, filmId: Int) {
+fun FilmDataScreen(navController: NavHostController, filmId: String, viewModel: FilmViewModel) {
     val context = LocalContext.current
-    val film = FilmDataSource.films.find { it.id == filmId }
+    val films = viewModel.films.collectAsState().value
+    val film = films.find { it.id == filmId }
 
     Scaffold(
         topBar = {
@@ -54,7 +57,7 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
                 ) {
                     // Imagen de la película
                     Image(
-                        painter = painterResource(id = film.imageResId),
+                        painter = painterResource(id = Film.getImageResource(film.image)),
                         contentDescription = "Cartel de ${film.title}",
                         modifier = Modifier
                             .size(200.dp)
@@ -72,7 +75,7 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
                             text = "Director:",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Text(text = film.director.orEmpty(), style = MaterialTheme.typography.bodyLarge)
+                        Text(text = film.director, style = MaterialTheme.typography.bodyLarge)
 
                         Text(
                             text = "Año:",

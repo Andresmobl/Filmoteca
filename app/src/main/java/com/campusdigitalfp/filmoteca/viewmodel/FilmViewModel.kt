@@ -25,8 +25,10 @@ class FilmViewModel : ViewModel() {
 
     // Se ejecuta al inicializar el ViewModel y activa la escucha de cambios en Firestore.
     init {
-        listenToFilms()
+        listenToFilms() // 🔥 Escucha cambios en Firestore en tiempo real
+        addExampleFilms() // 🔥 Agrega películas de prueba si Firestore está vacío
     }
+
 
     /**
      * Escucha los cambios en Firestore en tiempo real.
@@ -78,26 +80,23 @@ class FilmViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Agrega una lista de películas de ejemplo a Firestore.
-     * Se usa para pruebas o para pre-cargar Firestore con datos iniciales.
-     */
     fun addExampleFilms() {
-        val films = listOf(
-            Film(title = "Harry Potter y la Piedra Filosofal", director = "Chris Columbus", year = 2001, genre = "Fantasía", format = "DVD", comments = "Gran película de magia", image = "harry_potter"),
-            Film(title = "Regreso al Futuro", director = "Robert Zemeckis", year = 1985, genre = "Ciencia Ficción", format = "Digital", comments = "Un clásico del viaje en el tiempo", image = "back_to_future"),
-            Film(title = "El Rey León", director = "Roger Allers, Rob Minkoff", year = 1994, genre = "Animación", format = "Blu-ray", comments = "Una historia conmovedora", image = "lion_king"),
-            Film(title = "Titanic", director = "James Cameron", year = 1997, genre = "Drama", format = "DVD", comments = "Un clásico romántico", image = "titanic"),
-            Film(title = "El Señor de los Anillos: La Comunidad del Anillo", director = "Peter Jackson", year = 2001, genre = "Fantasía", format = "Blu-ray", comments = "Inicio de una gran saga", image = "lotr"),
-            Film(title = "Matrix", director = "Lana y Lilly Wachowski", year = 1999, genre = "Ciencia Ficción", format = "Digital", comments = "Revolucionó el cine de acción", image = "matrix"),
-            Film(title = "Avengers: Endgame", director = "Anthony y Joe Russo", year = 2019, genre = "Acción", format = "Digital", comments = "Épico cierre de una saga", image = "avengers_endgame"),
-            Film(title = "Gladiador", director = "Ridley Scott", year = 2000, genre = "Drama", format = "DVD", comments = "Película inspiradora", image = "gladiator"),
-            Film(title = "Joker", director = "Todd Phillips", year = 2019, genre = "Drama", format = "Blu-ray", comments = "Un papel espectacular de Joaquin Phoenix", image = "joker"),
-            Film(title = "Interstellar", director = "Christopher Nolan", year = 2014, genre = "Ciencia Ficción", format = "Blu-ray", comments = "Ciencia y emociones en el espacio", image = "interstellar")
-        )
-
         viewModelScope.launch {
-            repository.addMultipleFilms(films) // Inserta las películas en una sola operación.
+            val filmsInDB = repository.getFilms() // 🔥 Obtiene las películas actuales en Firestore
+
+            // 🔍 Filtrar solo las películas que NO están en Firestore
+            val filmsToAdd = listOf(
+                Film(title = "Harry Potter y la Piedra Filosofal", director = "Chris Columbus", year = 2001, genre = "Ciencia Ficción", format = "DVD", comments = "Gran película de magia", image = "harrypotterpiedrafilosofal"),
+                Film(title = "Regreso al Futuro", director = "Robert Zemeckis", year = 1985, genre = "Ciencia Ficción", format = "Digital", comments = "Un clásico del viaje en el tiempo", image = "regresoalfuturo"),
+                Film(title = "El Rey León", director = "Roger Allers, Rob Minkoff", year = 1994, genre = "Animación", format = "Blu-ray", comments = "Una historia conmovedora", image = "reyleon")
+            ).filter { film ->
+                // 🔍 Compara el título de cada película con las de Firestore
+                filmsInDB.none { it.title == film.title && it.director == film.director }
+            }
+
+            if (filmsToAdd.isNotEmpty()) {
+                repository.addMultipleFilms(filmsToAdd) // 🔥 Solo inserta las películas que no existen
+            }
         }
     }
 

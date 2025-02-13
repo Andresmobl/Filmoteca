@@ -17,6 +17,28 @@ data class Film(
         return title.ifBlank { "<Sin título>" }
     }
 
+    // 🔥 Devuelve el nombre del formato
+    fun getFormatName(): String {
+        return when (format) {
+            FORMAT_DVD -> "DVD"
+            FORMAT_BLURAY -> "Blu-ray"
+            FORMAT_DIGITAL -> "Digital"
+            else -> "Formato desconocido"
+        }
+    }
+
+    // 🔥 Devuelve el nombre del género
+    fun getGenreName(): String {
+        return when (genre) {
+            GENRE_ACTION -> "Acción"
+            GENRE_COMEDY -> "Comedia"
+            GENRE_DRAMA -> "Drama"
+            GENRE_SCIFI -> "Ciencia Ficción"
+            GENRE_HORROR -> "Terror"
+            else -> "Género desconocido"
+        }
+    }
+
     companion object {
         // Lista de formatos disponibles
         const val FORMAT_DVD = "DVD"
@@ -33,9 +55,9 @@ data class Film(
         // Método para obtener la imagen desde el nombre
         fun getImageResource(imageName: String): Int {
             return when (imageName) {
-                "harry_potter" -> com.campusdigitalfp.filmoteca.R.drawable.harrypotterpiedrafilosofal
-                "back_to_future" -> com.campusdigitalfp.filmoteca.R.drawable.regresoalfuturo
-                "lion_king" -> com.campusdigitalfp.filmoteca.R.drawable.reyleon
+                "harrypotterpiedrafilosofal" -> com.campusdigitalfp.filmoteca.R.drawable.harrypotterpiedrafilosofal
+                "regresoalfuturo" -> com.campusdigitalfp.filmoteca.R.drawable.regresoalfuturo
+                "reyleon" -> com.campusdigitalfp.filmoteca.R.drawable.reyleon
                 else -> com.campusdigitalfp.filmoteca.R.drawable.defecto
             }
         }
