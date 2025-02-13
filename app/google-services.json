@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "41341482300",
-    "project_id": "morenoafilmoteca",
-    "storage_bucket": "morenoafilmoteca.firebasestorage.app"
+    "project_number": "1055080095983",
+    "project_id": "filmoteca-217a6",
+    "storage_bucket": "filmoteca-217a6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:41341482300:android:2690cce172cabb7b135a39",
+        "mobilesdk_app_id": "1:1055080095983:android:98b065b6b64db6b6383b1a",
         "android_client_info": {
           "package_name": "com.campusdigitalfp.filmoteca"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCfD6vrm7kPqM7z3Z90Zv-dWP2cMQ_tQz4"
+          "current_key": "AIzaSyDxdxn2pILGEgXPnvSqI29XBRkzBF0wbEc"
         }
       ],
       "services": {

@@ -9,7 +9,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,25 +68,35 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.tasks.await
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        val db = FirebaseFirestore.getInstance() // Inicializa Firestore
+
         setContent {
-            // Configuramos el NavController y el NavHost
-            val navController = rememberNavController()
-            NavigationGraph(navController = navController)
+            val navController = rememberNavController() // Controlador de navegación
+            val filmViewModel: FilmViewModel = viewModel() // Instancia de ViewModel
+
+            NavigationGraph(navController = navController, filmViewModel = filmViewModel)
         }
     }
 }
+
 
 // Función para mostrar un Toast, definida fuera del composable
 fun showToast(context: Context, message: String) {
@@ -201,31 +209,13 @@ fun AboutScreen(navController: NavHostController) {
     )
 }
 
-// ViewModel para gestionar las películas
-class FilmViewModel : ViewModel() {
-    // Lista de películas
-    val films: SnapshotStateList<Film> = mutableStateListOf(*FilmDataSource.films.toTypedArray())
-
-    // Función para añadir una nueva película
-    fun addFilm(film: Film) {
-        films.add(film)
-    }
-
-    // Función para eliminar películas seleccionadas
-    fun removeFilms(selectedFilmIds: List<Int>) {
-        films.removeAll { it.id in selectedFilmIds }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun FilmListScreen(navController: NavHostController) {
-    // Obtener las películas desde FilmDataSource
-    val films = remember { mutableStateListOf(*FilmDataSource.films.toTypedArray()) }
-
+fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel = viewModel()) {
+    val films by viewModel.films.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
-    val selectedFilms = remember { mutableStateListOf<Int>() } // IDs seleccionados
+    val selectedFilms = remember { mutableStateListOf<String>() }
 
     Scaffold(
         topBar = {
@@ -237,18 +227,14 @@ fun FilmListScreen(navController: NavHostController) {
                     )
                 },
                 actions = {
-                    // Mostrar papelera si hay películas seleccionadas
                     if (selectedFilms.isNotEmpty()) {
                         IconButton(onClick = {
-                            // Elimina las películas seleccionadas
-                            films.removeAll { it.id in selectedFilms }
-                            FilmDataSource.films.removeAll { it.id in selectedFilms }
+                            selectedFilms.forEach { id -> viewModel.deleteFilm(id) }
                             selectedFilms.clear()
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Eliminar seleccionadas")
                         }
                     } else {
-                        // Menú desplegable normal
                         IconButton(onClick = { isMenuExpanded = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
                         }
@@ -259,18 +245,18 @@ fun FilmListScreen(navController: NavHostController) {
                             DropdownMenuItem(
                                 text = { Text("Añadir Película") },
                                 onClick = {
-                                    FilmDataSource.addFilm(
-                                        title = "Nueva Película",
-                                        director = "Director por defecto",
-                                        imageResId = R.drawable.defecto,
-                                        comments = "Comentarios por defecto",
-                                        format = Film.FORMAT_DVD,
-                                        genre = Film.GENRE_ACTION,
-                                        imdbUrl = "https://www.imdb.com",
-                                        year = 2023
+                                    viewModel.addFilm(
+                                        Film(
+                                            title = "Nueva Película",
+                                            director = "Director por defecto",
+                                            comments = "Comentarios por defecto",
+                                            format = Film.FORMAT_DVD,
+                                            genre = Film.GENRE_ACTION,
+                                            imdbUrl = "https://www.imdb.com",
+                                            year = 2023,
+                                            image = "defecto" // Asigna un nombre de imagen por defecto
+                                        )
                                     )
-                                    films.clear()
-                                    films.addAll(FilmDataSource.films) // Refresca la lista local
                                     isMenuExpanded = false
                                 }
                             )
@@ -294,7 +280,7 @@ fun FilmListScreen(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(films) { film ->
-                    val isSelected = film.id in selectedFilms
+                    val isSelected = film.id?.let { selectedFilms.contains(it) } ?: false
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -303,18 +289,19 @@ fun FilmListScreen(navController: NavHostController) {
                             .combinedClickable(
                                 onClick = {
                                     if (selectedFilms.isNotEmpty()) {
-                                        // Alternar selección si estamos en modo selección
-                                        if (isSelected) selectedFilms.remove(film.id)
-                                        else selectedFilms.add(film.id)
+                                        film.id?.let {
+                                            if (isSelected) selectedFilms.remove(it)
+                                            else selectedFilms.add(it)
+                                        }
                                     } else {
-                                        // Navegar al detalle si no estamos en modo selección
-                                        navController.navigate("filmDataScreen/${film.id}")
+                                        film.id?.let { navController.navigate("filmDataScreen/$it") }
                                     }
                                 },
                                 onLongClick = {
-                                    // Inicia modo selección al mantener pulsado
-                                    if (!selectedFilms.contains(film.id)) {
-                                        selectedFilms.add(film.id)
+                                    film.id?.let {
+                                        if (!selectedFilms.contains(it)) {
+                                            selectedFilms.add(it)
+                                        }
                                     }
                                 }
                             ),
@@ -329,7 +316,7 @@ fun FilmListScreen(navController: NavHostController) {
                             )
                         } else {
                             Image(
-                                painter = painterResource(id = film.imageResId),
+                                painter = painterResource(id = Film.getImageResource(film.image)),
                                 contentDescription = "Cartel de ${film.title}",
                                 modifier = Modifier
                                     .size(100.dp)
@@ -339,18 +326,9 @@ fun FilmListScreen(navController: NavHostController) {
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = film.title ?: "<Sin título>",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Text(
-                                text = film.director ?: "<Sin director>",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = film.title, style = MaterialTheme.typography.bodyLarge)
+                            Text(text = film.director, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                     }
                 }
@@ -359,13 +337,13 @@ fun FilmListScreen(navController: NavHostController) {
     )
 }
 
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun FilmDataScreen(navController: NavHostController, filmId: Int) {
-    val film = FilmDataSource.films.find { it.id == filmId }
-        ?: return // Maneja el caso de película no encontrada
+fun FilmDataScreen(navController: NavHostController, filmId: String, viewModel: FilmViewModel = viewModel()) {
+    val films by viewModel.films.collectAsState() // Obtenemos la lista de películas en tiempo real
+    val film = films.find { it.id == filmId } ?: return // Buscar película por ID
 
-    // Obtener contexto para usar en la función abrirPaginaWeb
     val context = LocalContext.current
 
     Scaffold(
@@ -373,23 +351,24 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
             FilmotecaAppBar(navController = navController, title = "Datos de la película")
         },
         content = { paddingValues ->
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 verticalArrangement = Arrangement.Top
             ) {
-                // Row para la imagen y textos
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Imagen a la izquierda
+                    // Obtener el recurso de imagen según el campo `image` en Firestore
+                    val imageResId = Film.getImageResource(film.image)
+
+                    // Imagen de la película
                     Image(
-                        painter = painterResource(id = film.imageResId),
+                        painter = painterResource(id = imageResId),
                         contentDescription = "Cartel de ${film.title}",
                         modifier = Modifier
                             .size(200.dp)
@@ -398,22 +377,19 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Columna con textos a la derecha de la imagen
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.weight(1f)
                     ) {
-                        // Director en negrita
                         Text(
                             text = "Director:",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = film.director ?: "<Desconocido>",
+                            text = film.director,
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        // Año en negrita
                         Text(
                             text = "Año:",
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
@@ -431,9 +407,9 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Comentarios debajo
+                // Comentarios
                 Text(
-                    text = film.comments ?: "Sin comentarios",
+                    text = film.comments,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
@@ -443,38 +419,34 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
                 // Botón "Ver en IMDB"
                 Button(
                     onClick = {
-                        abrirPaginaWeb(film.imdbUrl?: "", context)
+                        abrirPaginaWeb(film.imdbUrl, context)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp) // Margen horizontal para que no toque los bordes
+                        .padding(horizontal = 16.dp)
                 ) {
                     Text(text = "Ver en IMDB")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Row con los botones "Volver" y "Editar" ocupando la mitad de espacio cada uno
+                // Botones "Volver" y "Editar"
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp) // Espacio entre los botones
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Botón Volver
                     Button(
-                        onClick = {
-                            navController.popBackStack()
-                        },
-                        modifier = Modifier.weight(1f) // El botón ocupa la mitad del espacio disponible
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(text = "Volver")
                     }
 
-                    // Botón Editar
                     Button(
                         onClick = {
-                            navController.navigate("filmEditScreen/${film.id}")
+                            film.id?.let { navController.navigate("filmEditScreen/$it") }
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -488,25 +460,25 @@ fun FilmDataScreen(navController: NavHostController, filmId: Int) {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun FilmEditScreen(navController: NavHostController, filmId: Int) {
-    val TAG = "FilmEditScreen" // Etiqueta para los logs
+fun FilmEditScreen(navController: NavHostController, filmId: String, viewModel: FilmViewModel = viewModel()) {
+    val TAG = "FilmEditScreen"
 
-    val film = FilmDataSource.films.find { it.id == filmId }
-        ?: return // Maneja el caso de película no encontrada
+    val films by viewModel.films.collectAsState() // Obtener películas en tiempo real
+    val film = films.find { it.id == filmId } ?: return // Buscar película por ID en Firestore
 
     var titulo by remember { mutableStateOf(film.title) }
     var director by remember { mutableStateOf(film.director) }
-    var anyo by remember { mutableIntStateOf(film.year) }
+    var anyo by remember { mutableStateOf(film.year.toString()) }
     var url by remember { mutableStateOf(film.imdbUrl) }
-    var imagen by remember { mutableIntStateOf(film.imageResId) }
     var comentarios by remember { mutableStateOf(film.comments) }
+    var imagen by remember { mutableStateOf(film.image) } // Ahora se usa el campo `image`
 
     var expandedGenero by remember { mutableStateOf(false) }
     var expandedFormato by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val generoList = context.resources.getStringArray(R.array.genero_list).toList()
-    val formatoList = context.resources.getStringArray(R.array.formato_list).toList()
+    val generoList = listOf("Acción", "Comedia", "Drama", "Ciencia Ficción", "Terror")
+    val formatoList = listOf("DVD", "Blu-ray", "Digital")
 
     var genero by remember { mutableIntStateOf(film.genre) }
     var formato by remember { mutableIntStateOf(film.format) }
@@ -529,9 +501,11 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val imageResId = Film.getImageResource(imagen) // Cambiado a `imagen`
+
                     Image(
-                        painter = painterResource(id = imagen),
-                        contentDescription = "Cartel de titulo",
+                        painter = painterResource(id = imageResId),
+                        contentDescription = "Cartel de $titulo",
                         modifier = Modifier
                             .size(100.dp)
                             .clip(RoundedCornerShape(8.dp))
@@ -567,23 +541,23 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                 }
 
                 TextField(
-                    value = titulo ?: "",
+                    value = titulo,
                     onValueChange = { titulo = it },
                     label = { Text("Título") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 TextField(
-                    value = director ?: "",
+                    value = director,
                     onValueChange = { director = it },
                     label = { Text("Director") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 TextField(
-                    value = anyo.toString(),
+                    value = anyo,
                     onValueChange = { newValue ->
-                        anyo = newValue.toIntOrNull() ?: anyo
+                        anyo = newValue.filter { it.isDigit() } // Solo números
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -620,7 +594,7 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                 // Menú desplegable para Formato
                 Column {
                     Text("Formato")
-                    Box (
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { expandedFormato = true }
@@ -646,14 +620,14 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                 }
 
                 TextField(
-                    value = url ?: "",
+                    value = url,
                     onValueChange = { url = it },
                     label = { Text("Enlace a IMDB") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 TextField(
-                    value = comentarios?: "",
+                    value = comentarios,
                     onValueChange = { comentarios = it },
                     label = { Text("Comentarios") },
                     modifier = Modifier.fillMaxWidth()
@@ -665,30 +639,25 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                 ) {
                     Button(
                         onClick = {
-                            // Encuentra el índice de la película seleccionada
-                            val filmIndex = FilmDataSource.films.indexOfFirst { it.id == filmId }
-                            if (filmIndex != -1) {
-                                // Actualiza los datos en la lista
-                                FilmDataSource.films[filmIndex] = Film(
+                            // Guardar cambios en Firestore
+                            viewModel.updateFilm(
+                                Film(
                                     id = filmId,
-                                    imageResId = imagen,
                                     title = titulo,
                                     director = director,
-                                    year = anyo,
+                                    year = anyo.toIntOrNull() ?: film.year,
                                     genre = genero,
                                     format = formato,
                                     imdbUrl = url,
-                                    comments = comentarios
+                                    comments = comentarios,
+                                    image = imagen // Ahora se guarda `image` en Firestore
                                 )
+                            )
 
-                                // Muestra un Toast indicando que los datos han sido guardados
-                                Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
+                            Log.i(TAG, "Cambios guardados para la película con ID: $filmId")
 
-                                // Log de guardado de datos
-                                Log.i(TAG, "Cambios guardados para la película con ID: $filmId")
-                            }
-
-                            // Vuelve a la pantalla anterior
+                            // Volver a la pantalla anterior
                             navController.popBackStack()
                         },
                         modifier = Modifier.weight(1f)
@@ -700,7 +669,6 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
 
                     Button(
                         onClick = {
-                            // Log de cancelación de cambios
                             Log.i(TAG, "Cambios descartados para la película con ID: $filmId")
                             navController.popBackStack()
                         },
@@ -714,77 +682,87 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
     )
 }
 
-
 @Composable
-fun NavigationGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "filmListScreen") {
+fun NavigationGraph(navController: NavHostController, filmViewModel: FilmViewModel) {
+    NavHost(navController = navController, startDestination = Routes.FilmListScreen.route) {
 
         // Pantalla principal de lista de películas
-        composable("filmListScreen") {
-            FilmListScreen(navController = navController)
+        composable(Routes.FilmListScreen.route) {
+            FilmListScreen(navController = navController, viewModel = filmViewModel)
         }
 
         // Pantalla de detalles de la película
         composable(
-            route = "filmDataScreen/{filmId}",
-            arguments = listOf(navArgument("filmId") { type = NavType.IntType })
+            route = Routes.FilmDataScreen.route,
+            arguments = listOf(navArgument("filmId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val filmId = backStackEntry.arguments?.getInt("filmId")
-            if (filmId != null && filmId >= 0) {
-                FilmDataScreen(navController = navController, filmId = filmId)
-            } else {
-                navController.popBackStack() // Si el ID no es válido, regresar
-            }
+            backStackEntry.arguments?.getString("filmId")?.let { filmId ->
+                FilmDataScreen(navController = navController, filmId = filmId, viewModel = filmViewModel)
+            } ?: navController.popBackStack()
         }
 
         // Pantalla de edición de la película
         composable(
-            route = "filmEditScreen/{filmId}",
-            arguments = listOf(navArgument("filmId") { type = NavType.IntType })
+            route = Routes.FilmEditScreen.route,
+            arguments = listOf(navArgument("filmId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val filmId = backStackEntry.arguments?.getInt("filmId")
-            if (filmId != null && filmId >= 0) {
-                FilmEditScreen(navController = navController, filmId = filmId)
-            } else {
-                navController.popBackStack() // Si el ID no es válido, regresar
-            }
+            backStackEntry.arguments?.getString("filmId")?.let { filmId ->
+                FilmEditScreen(navController = navController, filmId = filmId, viewModel = filmViewModel)
+            } ?: navController.popBackStack()
         }
 
         // Pantalla "Acerca de"
-        composable("aboutScreen") {
+        composable(Routes.AboutScreen.route) {
             AboutScreen(navController)
         }
     }
 }
 
+// Definir un sealed class para manejar rutas de forma más segura
+sealed class Routes(val route: String) {
+    object FilmListScreen : Routes("filmListScreen")
+    object FilmDataScreen : Routes("filmDataScreen/{filmId}")
+    object FilmEditScreen : Routes("filmEditScreen/{filmId}")
+    object AboutScreen : Routes("aboutScreen")
+}
+
 data class Film(
-    var id: Int = 0,
-    var imageResId: Int = 0, // Propiedades de la clase
-    var title: String? = null,
-    var director: String? = null,
+    var id: String? = null,  // ID de Firestore
+    var title: String = "",
+    var director: String = "",
     var year: Int = 0,
     var genre: Int = 0,
     var format: Int = 0,
-    var imdbUrl: String? = null,
-    var comments: String? = null
+    var imdbUrl: String = "",
+    var comments: String = "",
+    var image: String = ""  // Ahora se almacena en Firestore como un String
 ) {
     override fun toString(): String {
-        // Al convertir a cadena mostramos su título
-        return title ?: "<Sin título>"
+        return title
     }
 
     companion object {
-        const val FORMAT_DVD = 0 // Formatos
+        const val FORMAT_DVD = 0
         const val FORMAT_BLURAY = 1
         const val FORMAT_DIGITAL = 2
-        const val GENRE_ACTION = 0 // Géneros
+
+        const val GENRE_ACTION = 0
         const val GENRE_COMEDY = 1
         const val GENRE_DRAMA = 2
         const val GENRE_SCIFI = 3
         const val GENRE_HORROR = 4
+
+        // Función para obtener el recurso de imagen según el nombre almacenado en Firestore
+        fun getImageResource(imageName: String): Int {
+            return when (imageName) {
+                "harrypotterpiedrafilosofal" -> R.drawable.harrypotterpiedrafilosofal
+                "regresoalfuturo" -> R.drawable.regresoalfuturo
+                "reyleon" -> R.drawable.reyleon
+                else -> R.drawable.defecto
+            }
+        }
     }
 
-    // Función para convertir el formato a texto
     fun getFormatName(): String {
         return when (format) {
             FORMAT_DVD -> "DVD"
@@ -794,7 +772,6 @@ data class Film(
         }
     }
 
-    // Función para convertir el género a texto
     fun getGenreName(): String {
         return when (genre) {
             GENRE_ACTION -> "Acción"
@@ -807,72 +784,53 @@ data class Film(
     }
 }
 
-object FilmDataSource {
-    val films: MutableList<Film> = mutableListOf()
+class FilmRepository {
+    private val firestore = FirebaseFirestore.getInstance()
+    private val filmsCollection = firestore.collection("films")
+
+    private val _films = MutableStateFlow<List<Film>>(emptyList())
+    val films: StateFlow<List<Film>> get() = _films
 
     init {
-        // Primera película: Harry Potter y la piedra filosofal
-        addFilm(
-            title = "Harry Potter y la piedra filosofal",
-            director = "Chris Columbus",
-            imageResId = R.drawable.harrypotterpiedrafilosofal,
-            comments = "Una aventura mágica en Hogwarts.",
-            format = Film.FORMAT_DVD,
-            genre = Film.GENRE_ACTION,
-            imdbUrl = "http://www.imdb.com/title/tt0241527",
-            year = 2001
-        )
-
-        // Segunda película: Regreso al futuro
-        addFilm(
-            title = "Regreso al futuro",
-            director = "Robert Zemeckis",
-            imageResId = R.drawable.regresoalfuturo,
-            comments = "Una aventura épica en el tiempo.",
-            format = Film.FORMAT_DIGITAL,
-            genre = Film.GENRE_SCIFI,
-            imdbUrl = "http://www.imdb.com/title/tt0088763",
-            year = 1985
-        )
-
-        // Tercera película: El rey león
-        addFilm(
-            title = "El Rey León",
-            director = "Roger Allers, Rob Minkoff",
-            imageResId = R.drawable.reyleon,
-            comments = "Una historia de crecimiento y responsabilidad.",
-            format = Film.FORMAT_BLURAY,
-            genre = Film.GENRE_DRAMA,
-            imdbUrl = "http://www.imdb.com/title/tt0110357",
-            year = 1994
-        )
+        filmsCollection.addSnapshotListener { snapshot, e ->
+            if (e != null || snapshot == null) return@addSnapshotListener
+            val filmList = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(Film::class.java)?.copy(id = doc.id)
+            }
+            _films.value = filmList
+        }
     }
 
-    // Función para añadir una película con datos
-    fun addFilm(
-        title: String,
-        director: String,
-        imageResId: Int,
-        comments: String,
-        format: Int,
-        genre: Int,
-        imdbUrl: String,
-        year: Int
-    ) {
-        val newFilm = Film(
-            id = (films.maxOfOrNull { it.id } ?: 0) + 1, // Generar ID único
-            title = title,
-            director = director,
-            imageResId = imageResId,
-            comments = comments,
-            format = format,
-            genre = genre,
-            imdbUrl = imdbUrl,
-            year = year
-        )
-        films.add(newFilm)
+    suspend fun addFilm(film: Film) {
+        filmsCollection.add(film).await()
+    }
+
+    suspend fun deleteFilm(id: String) {
+        filmsCollection.document(id).delete().await()
+    }
+
+    suspend fun updateFilm(film: Film) {
+        filmsCollection.document(film.id!!).set(film).await()
     }
 }
+
+class FilmViewModel(private val repository: FilmRepository) : ViewModel() {
+    val films = repository.films
+
+    fun addFilm(film: Film) {
+        viewModelScope.launch { repository.addFilm(film) }
+    }
+
+    fun deleteFilm(id: String) {
+        viewModelScope.launch { repository.deleteFilm(id) }
+    }
+
+    fun updateFilm(film: Film) {
+        viewModelScope.launch { repository.updateFilm(film) }
+    }
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
