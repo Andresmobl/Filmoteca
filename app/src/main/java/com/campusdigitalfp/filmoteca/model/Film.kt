@@ -1,53 +1,43 @@
 package com.campusdigitalfp.filmoteca.model
 
+import com.google.firebase.firestore.DocumentId
+
 data class Film(
-    var id: Int = 0,
-    var imageResId: Int = 0,
-    var title: String? = null,
-    var director: String? = null,
-    var year: Int = 0,
-    var genre: Int = 0,
-    var format: Int = 0,
-    var imdbUrl: String? = null,
-    var comments: String? = null
+    @DocumentId val id: String = "", // Firestore asignará un ID único automáticamente
+    val title: String = "",
+    val director: String = "",
+    val year: Int = 0,
+    val genre: String = "",
+    val format: String = "",
+    val imdbUrl: String = "",
+    val comments: String = "",
+    val image: String = "default_image" // Nombre del recurso drawable
 ) {
     override fun toString(): String {
-        return title ?: "<Sin título>"
+        return title.ifBlank { "<Sin título>" }
     }
 
     companion object {
-        // Formatos disponibles
-        const val FORMAT_DVD = 0
-        const val FORMAT_BLURAY = 1
-        const val FORMAT_DIGITAL = 2
+        // Lista de formatos disponibles
+        const val FORMAT_DVD = "DVD"
+        const val FORMAT_BLURAY = "Blu-ray"
+        const val FORMAT_DIGITAL = "Digital"
 
-        // Géneros de películas
-        const val GENRE_ACTION = 0
-        const val GENRE_COMEDY = 1
-        const val GENRE_DRAMA = 2
-        const val GENRE_SCIFI = 3
-        const val GENRE_HORROR = 4
-    }
+        // Lista de géneros
+        const val GENRE_ACTION = "Acción"
+        const val GENRE_COMEDY = "Comedia"
+        const val GENRE_DRAMA = "Drama"
+        const val GENRE_SCIFI = "Ciencia Ficción"
+        const val GENRE_HORROR = "Terror"
 
-    // Devuelve el nombre del formato como texto
-    fun getFormatName(): String {
-        return when (format) {
-            FORMAT_DVD -> "DVD"
-            FORMAT_BLURAY -> "Blu-ray"
-            FORMAT_DIGITAL -> "Digital"
-            else -> "Desconocido"
-        }
-    }
-
-    // Devuelve el nombre del género como texto
-    fun getGenreName(): String {
-        return when (genre) {
-            GENRE_ACTION -> "Acción"
-            GENRE_COMEDY -> "Comedia"
-            GENRE_DRAMA -> "Drama"
-            GENRE_SCIFI -> "Ciencia Ficción"
-            GENRE_HORROR -> "Terror"
-            else -> "Desconocido"
+        // Método para obtener la imagen desde el nombre
+        fun getImageResource(imageName: String): Int {
+            return when (imageName) {
+                "harry_potter" -> com.campusdigitalfp.filmoteca.R.drawable.harrypotterpiedrafilosofal
+                "back_to_future" -> com.campusdigitalfp.filmoteca.R.drawable.regresoalfuturo
+                "lion_king" -> com.campusdigitalfp.filmoteca.R.drawable.reyleon
+                else -> com.campusdigitalfp.filmoteca.R.drawable.defecto
+            }
         }
     }
 }

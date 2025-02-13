@@ -1,7 +1,6 @@
 package com.campusdigitalfp.filmoteca.ui.vistas
 
 import android.annotation.SuppressLint
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -29,7 +28,6 @@ import com.campusdigitalfp.filmoteca.model.FilmDataSource
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun FilmEditScreen(navController: NavHostController, filmId: Int) {
-    val TAG = "FilmEditScreen"
 
     val film = FilmDataSource.films.find { it.id == filmId }
         ?: return // Maneja el caso en que la película no exista
@@ -39,7 +37,7 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
     var anyo by remember { mutableStateOf(film.year.toString()) }
     var url by remember { mutableStateOf(film.imdbUrl.orEmpty()) }
     var comentarios by remember { mutableStateOf(film.comments.orEmpty()) }
-    var imagen by remember { mutableStateOf(film.imageResId) }
+    val imagen by remember { mutableIntStateOf(film.imageResId) }
 
     var expandedGenero by remember { mutableStateOf(false) }
     var expandedFormato by remember { mutableStateOf(false) }
@@ -226,7 +224,6 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
                                 )
 
                                 Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
-                                Log.i(TAG, "Cambios guardados para la película con ID: $filmId")
                             }
 
                             navController.popBackStack()
@@ -240,7 +237,6 @@ fun FilmEditScreen(navController: NavHostController, filmId: Int) {
 
                     Button(
                         onClick = {
-                            Log.i(TAG, "Cambios descartados para la película con ID: $filmId")
                             navController.popBackStack()
                         },
                         modifier = Modifier.weight(1f)
