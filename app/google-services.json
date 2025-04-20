@@ -12,7 +12,20 @@
           "package_name": "com.campusdigitalfp.filmoteca"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1055080095983-suhf7dq2vdr9te9mhhprpf663akb723v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.campusdigitalfp.filmoteca",
+            "certificate_hash": "beb520fa319d0adce55bdf2d624fab6ba7128877"
+          }
+        },
+        {
+          "client_id": "1055080095983-v0c99l8b8jig60kcq57u3o909li3s9hj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDxdxn2pILGEgXPnvSqI29XBRkzBF0wbEc"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1055080095983-v0c99l8b8jig60kcq57u3o909li3s9hj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.campusdigitalfp.filmoteca"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -62,8 +62,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // Firebase BoM (Última versión)
-    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-firestore-ktx:25.1.2")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.play.services.auth)
 
 }

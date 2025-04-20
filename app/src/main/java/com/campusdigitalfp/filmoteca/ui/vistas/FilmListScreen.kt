@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -23,15 +24,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.campusdigitalfp.filmoteca.model.Film
+import com.campusdigitalfp.filmoteca.viewmodel.AuthViewModel
 import com.campusdigitalfp.filmoteca.viewmodel.FilmViewModel
 
 @RequiresApi(Build.VERSION_CODES.N)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel) {
+fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel, authViewModel: AuthViewModel = viewModel()) {
     // 🔥 Estado que obtiene la lista de películas en tiempo real desde Firestore
     val films by viewModel.films.collectAsState()
 
@@ -88,6 +91,23 @@ fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel) {
                                     isMenuExpanded = false
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text("Cerrar Sesion") },
+                                onClick = {
+                                    isMenuExpanded = false
+                                    authViewModel.logout()
+                                    navController.navigate("login") {
+                                        popUpTo("list") { inclusive = true }
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon (
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Cerrar Sesion",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            )
                         }
                     }
                 }
@@ -114,7 +134,7 @@ fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel) {
                                         if (isSelected) selectedFilms.remove(film.id)
                                         else selectedFilms.add(film.id)
                                     } else {
-                                        navController.navigate("filmDataScreen/${film.id}")
+                                        navController.navigate("details/${film.id}")
                                     }
                                 },
                                 onLongClick = {

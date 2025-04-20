@@ -9,13 +9,11 @@ import kotlinx.coroutines.tasks.await
  * `FilmRepository` maneja todas las operaciones relacionadas con las películas en Firestore.
  * Actúa como una capa intermedia entre Firestore y el ViewModel.
  */
-class FilmRepository {
+class FilmRepository (private val uid: String) {
 
     // Obtiene una instancia de Firestore.
     private val db = FirebaseFirestore.getInstance()
-
-    // Referencia a la colección "films" en Firestore donde se almacenan las películas.
-    private val filmsCollection = db.collection("films")
+    private val filmsCollection = db.collection("users").document(uid).collection("films")
 
     /**
      * Agrega una nueva película a Firestore.

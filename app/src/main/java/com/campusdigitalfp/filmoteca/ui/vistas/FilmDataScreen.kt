@@ -134,7 +134,7 @@ fun FilmDataScreen(navController: NavHostController, filmId: String, viewModel: 
                     }
 
                     Button(
-                        onClick = { navController.navigate("filmEditScreen/${film.id}") },
+                        onClick = { navController.navigate("edit/${film.id}") },
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(text = "Editar")
