@@ -51,6 +51,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.navigation.runtime.ktx)
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+
+
 
     // Pruebas
     testImplementation(libs.junit)

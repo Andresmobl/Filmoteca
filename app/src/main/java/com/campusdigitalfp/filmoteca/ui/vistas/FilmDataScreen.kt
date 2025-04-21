@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.campusdigitalfp.filmoteca.common.CameraCapture
+import com.campusdigitalfp.filmoteca.common.ImageCarousel
 import com.campusdigitalfp.filmoteca.model.Film
 import com.campusdigitalfp.filmoteca.viewmodel.FilmViewModel
 
@@ -106,6 +109,16 @@ fun FilmDataScreen(navController: NavHostController, filmId: String, viewModel: 
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                val imagenes by viewModel.imagenes.collectAsState() // Estado de las imagenes observados desde el ViewModel.
+                val imagenesFilmUrls = imagenes
+                    .filter { it.film == film.id }
+                    .map { it.url }
+
+                //Añadimos el carousel encima de CameraCapture.
+                ImageCarousel(imagenesFilmUrls)
+
+                CameraCapture(viewModel, film.id)
 
                 // Botón "Ver en IMDB"
                 Button(

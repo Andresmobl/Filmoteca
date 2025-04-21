@@ -87,7 +87,7 @@ fun FilmListScreen(navController: NavHostController, viewModel: FilmViewModel, a
                             DropdownMenuItem(
                                 text = { Text("Acerca de") },
                                 onClick = {
-                                    navController.navigate("aboutScreen")
+                                    navController.navigate("about")
                                     isMenuExpanded = false
                                 }
                             )

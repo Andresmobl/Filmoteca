@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.campusdigitalfp.filmoteca.R
+import com.campusdigitalfp.filmoteca.common.VideoItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -54,6 +55,7 @@ fun AboutScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                VideoItem("https://github.com/Andresmobl/VideoFilmoteca/raw/refs/heads/main/2025-04-21%2018-30-29.mkv")
                 // Texto con nombre de autor
                 Text(
                     text = aboutAuthorText,
